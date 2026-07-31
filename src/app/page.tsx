@@ -92,18 +92,19 @@ function HomeClient() {
       try {
         setLoading(true);
 
+        // 番剧日历是可选数据，不阻塞首页的主要推荐内容。
+        void GetBangumiCalendarData().then(setBangumiCalendarData);
+
         // 并行获取热门电影、热门剧集和热门综艺
-        const [moviesData, tvShowsData, varietyShowsData, bangumiCalendarData] =
-          await Promise.all([
-            getDoubanCategories({
-              kind: 'movie',
-              category: '热门',
-              type: '全部',
-            }),
-            getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
-            getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
-            GetBangumiCalendarData(),
-          ]);
+        const [moviesData, tvShowsData, varietyShowsData] = await Promise.all([
+          getDoubanCategories({
+            kind: 'movie',
+            category: '热门',
+            type: '全部',
+          }),
+          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
+          getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
+        ]);
 
         if (moviesData.code === 200) {
           setHotMovies(moviesData.list);
@@ -116,8 +117,6 @@ function HomeClient() {
         if (varietyShowsData.code === 200) {
           setHotVarietyShows(varietyShowsData.list);
         }
-        setBangumiCalendarData(bangumiCalendarData);
-
         // 获取自定义分类数据：电影 - 华语
         const customCategoryData = await getDoubanList({
           tag: '华语',

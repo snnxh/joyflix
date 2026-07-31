@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 'use client';
 
 export interface BangumiCalendarData {
@@ -23,7 +25,17 @@ export interface BangumiCalendarData {
 }
 
 export async function GetBangumiCalendarData(): Promise<BangumiCalendarData[]> {
-  const response = await fetch('https://api.bgm.tv/calendar');
-  const data = await response.json();
-  return data;
+  try {
+    const response = await fetch('/api/bangumi/calendar');
+    if (!response.ok) {
+      throw new Error(`Bangumi calendar proxy returned ${response.status}`);
+    }
+
+    const data: unknown = await response.json();
+    return Array.isArray(data) ? (data as BangumiCalendarData[]) : [];
+  } catch (error) {
+    // The calendar is optional; the rest of the homepage should still render.
+    console.warn('Bangumi calendar unavailable:', error);
+    return [];
+  }
 }

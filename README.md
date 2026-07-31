@@ -16,7 +16,7 @@
 
 </div>
 
-- ⚠️ 因默认使用图片代理方式为豆瓣精品CDN，因此Api获取问题导致部分图片加载异常，可部署后在应用设置中将图片代理改为直连或部署时通过环境变量修改为直连即可恢复正常（懒得改默认了，辛苦各位手动改一下）
+- 豆瓣图片默认通过站内服务器代理加载，避免浏览器直连图片 CDN 时触发防盗链限制。
 - ⚠️相对于原版进行了如下功能的添加及其重构（仅列举部分）：
 - 1️⃣ 新增详细页（使用了服务器在线爬虫技术，第三方API调用，从后端API搜索获取等三种不同的回退机制确保数据获取的稳定性）
 - 2️⃣ 支持浏览滚动记录（确保进入详细页查看影片不喜欢退出上级页面不会丢失浏览记录，可以回到之前的滚动位置）
@@ -203,7 +203,7 @@ networks:
 | NEXT_PUBLIC_SEARCH_MAX_PAGE         | 搜索接口可拉取的最大页数                     | 1-50                             | 5                                                                                                                          |
 | NEXT_PUBLIC_DOUBAN_PROXY_TYPE       | 豆瓣数据源请求方式                           | 见下方                           | direct                                                                                                                     |
 | NEXT_PUBLIC_DOUBAN_PROXY            | 自定义豆瓣数据代理 URL                       | url prefix                       | (空)                                                                                                                       |
-| NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE | 豆瓣图片代理类型                             | 见下方                           | direct                                                                                                                     |
+| NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE | 豆瓣图片代理类型                             | 见下方                           | server                                                                                                                     |
 | NEXT_PUBLIC_DOUBAN_IMAGE_PROXY      | 自定义豆瓣图片代理 URL                       | url prefix                       | (空)                                                                                                                       |
 | NEXT_PUBLIC_BASE_URL                | 搜索推荐数据库获取值接口URL                     | https://xxx.com                 | 空    
                                                                                                 
