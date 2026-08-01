@@ -37,11 +37,28 @@ export function getDoubanServerImageProxyUrl(originalUrl: string): string {
   return `/api/image-proxy?url=${encodeURIComponent(normalizedUrl)}`;
 }
 
+export function getServerImageProxyUrl(originalUrl: string): string {
+  return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+}
+
+function isDoubanImageUrl(url: string): boolean {
+  return /(^|\.)doubanio\.com/i.test(url);
+}
+
+function isBangumiImageUrl(url: string): boolean {
+  return /(^|\.)bgm\.tv/i.test(url);
+}
+
 export function processImageUrl(originalUrl: string): string {
   if (!originalUrl) return originalUrl;
 
+  // Bangumi 图片在部分网络环境下直连容易超时，统一走站内代理。
+  if (isBangumiImageUrl(originalUrl)) {
+    return getServerImageProxyUrl(originalUrl);
+  }
+
   // 仅处理豆瓣图片代理
-  if (!originalUrl.includes('doubanio.com')) {
+  if (!isDoubanImageUrl(originalUrl)) {
     return originalUrl;
   }
 

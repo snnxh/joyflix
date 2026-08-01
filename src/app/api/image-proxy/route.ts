@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-const REQUEST_TIMEOUT_MS = 4500;
+const REQUEST_TIMEOUT_MS = 8000;
 const DOUBAN_IMAGE_HOST_PATTERN = /^img\d+\.doubanio\.com$/i;
 const DOUBAN_IMAGE_HOSTS = ['img3.doubanio.com', 'img9.doubanio.com'];
+const BANGUMI_IMAGE_HOST_PATTERN = /(^|\.)bgm\.tv$/i;
 
 function getImageCandidates(imageUrl: string): string[] {
   const parsedUrl = new URL(imageUrl);
@@ -14,6 +15,18 @@ function getImageCandidates(imageUrl: string): string[] {
   }
 
   if (!DOUBAN_IMAGE_HOST_PATTERN.test(parsedUrl.hostname)) {
+    if (BANGUMI_IMAGE_HOST_PATTERN.test(parsedUrl.hostname)) {
+      const httpsCandidate = new URL(parsedUrl);
+      httpsCandidate.protocol = 'https:';
+
+      const httpCandidate = new URL(parsedUrl);
+      httpCandidate.protocol = 'http:';
+
+      return Array.from(
+        new Set([httpsCandidate.toString(), httpCandidate.toString()])
+      );
+    }
+
     return [parsedUrl.toString()];
   }
 
@@ -27,12 +40,16 @@ function getImageCandidates(imageUrl: string): string[] {
 async function fetchImage(imageUrl: string): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const hostname = new URL(imageUrl).hostname;
+  const isBangumiImage = BANGUMI_IMAGE_HOST_PATTERN.test(hostname);
 
   try {
     return await fetch(imageUrl, {
       headers: {
         Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-        Referer: 'https://movie.douban.com/',
+        Referer: isBangumiImage
+          ? 'https://bgm.tv/'
+          : 'https://movie.douban.com/',
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
       },

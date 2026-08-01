@@ -16,6 +16,7 @@ import {
 import { SearchResult } from '@/lib/types';
 import {
   getDoubanServerImageProxyUrl,
+  getServerImageProxyUrl,
   processImageUrl,
 } from '@/lib/utils';
 
@@ -394,13 +395,17 @@ export default function VideoCard({
           onLoadingComplete={() => setIsLoading(true)}
           onError={(e) => {
             const img = e.target as HTMLImageElement;
+            const isDoubanImage = actualPoster.includes('doubanio.com');
+            const isBangumiImage = /(^|\.)bgm\.tv/i.test(actualPoster);
             const canUseServerFallback =
-              actualPoster.includes('doubanio.com') &&
+              (isDoubanImage || isBangumiImage) &&
               !img.src.includes('/api/image-proxy?');
 
             if (!img.dataset.retried && canUseServerFallback) {
               img.dataset.retried = 'true';
-              img.src = getDoubanServerImageProxyUrl(actualPoster);
+              img.src = isDoubanImage
+                ? getDoubanServerImageProxyUrl(actualPoster)
+                : getServerImageProxyUrl(actualPoster);
             }
           }}
         />
