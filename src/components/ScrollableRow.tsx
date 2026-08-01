@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ScrollableRowProps {
   children: React.ReactNode;
@@ -14,8 +14,11 @@ export default function ScrollableRow({
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
+    if (!isDesktop) return;
+
     if (containerRef.current) {
       const { scrollWidth, clientWidth, scrollLeft } = containerRef.current;
 
@@ -28,9 +31,29 @@ export default function ScrollableRow({
       setShowRightScroll(canScrollRight);
       setShowLeftScroll(canScrollLeft);
     }
-  };
+  }, [isDesktop]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 640px)');
+    const updateIsDesktop = () => {
+      setIsDesktop(mediaQuery.matches);
+      if (!mediaQuery.matches) {
+        setShowLeftScroll(false);
+        setShowRightScroll(false);
+      }
+    };
+
+    updateIsDesktop();
+    mediaQuery.addEventListener?.('change', updateIsDesktop);
+
+    return () => {
+      mediaQuery.removeEventListener?.('change', updateIsDesktop);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop) return;
+
     // 多次延迟检查，确保内容已完全渲染
     checkScroll();
 
@@ -51,10 +74,12 @@ export default function ScrollableRow({
       window.removeEventListener('resize', checkScroll);
       resizeObserver.disconnect();
     };
-  }, [children]); // 依赖 children，当子组件变化时重新检查
+  }, [children, checkScroll, isDesktop]); // 依赖 children，当子组件变化时重新检查
 
   // 添加一个额外的效果来监听子组件的变化
   useEffect(() => {
+    if (!isDesktop) return;
+
     if (containerRef.current) {
       // 监听 DOM 变化
       const observer = new MutationObserver(() => {
@@ -70,7 +95,7 @@ export default function ScrollableRow({
 
       return () => observer.disconnect();
     }
-  }, []);
+  }, [checkScroll, isDesktop]);
 
   const handleScrollRightClick = () => {
     if (containerRef.current) {
@@ -94,6 +119,7 @@ export default function ScrollableRow({
     <div
       className='relative'
       onMouseEnter={() => {
+        if (!isDesktop) return;
         setIsHovered(true);
         // 当鼠标进入时重新检查一次
         checkScroll();

@@ -389,6 +389,7 @@ export default function VideoCard({
           src={processImageUrl(actualPoster)}
           alt={actualTitle}
           fill
+          sizes='(max-width: 640px) 96px, 180px'
           className='object-cover'
           referrerPolicy='no-referrer'
           loading='lazy'

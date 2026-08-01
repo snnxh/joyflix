@@ -49,9 +49,22 @@ function HomeClient() {
     BangumiCalendarData[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const { announcement } = useSite();
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 639px)');
+    const updateIsMobile = () => setIsMobile(mediaQuery.matches);
+
+    updateIsMobile();
+    mediaQuery.addEventListener?.('change', updateIsMobile);
+
+    return () => {
+      mediaQuery.removeEventListener?.('change', updateIsMobile);
+    };
+  }, []);
 
   // 检查公告弹窗状态
   useEffect(() => {
@@ -196,6 +209,9 @@ function HomeClient() {
     localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
   };
 
+  const limitForDevice = <T,>(items: T[], mobileLimit = 10) =>
+    isMobile ? items.slice(0, mobileLimit) : items;
+
   return (
     <PageLayout>
       <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-x-hidden'>
@@ -291,7 +307,7 @@ function HomeClient() {
                         />
                       ))
                     : // 显示真实数据
-                      hotMovies.map((movie, index) => (
+                      limitForDevice(hotMovies).map((movie, index) => (
                         <div
                           key={index}
                           className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
@@ -335,7 +351,7 @@ function HomeClient() {
                         />
                       ))
                     : // 显示真实数据
-                      hotTvShows.map((show, index) => (
+                      limitForDevice(hotTvShows).map((show, index) => (
                         <div
                           key={index}
                           className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
@@ -398,7 +414,7 @@ function HomeClient() {
                             (item) => item.weekday.en === currentWeekday
                           )?.items || [];
 
-                        return todayAnimes.map((anime, index) => (
+                        return limitForDevice(todayAnimes).map((anime, index) => (
                           <div
                             key={`${anime.id}-${index}`}
                             className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
@@ -449,7 +465,7 @@ function HomeClient() {
                         />
                       ))
                     : // 显示真实数据
-                      hotVarietyShows.map((show, index) => (
+                      limitForDevice(hotVarietyShows).map((show, index) => (
                         <div
                           key={index}
                           className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
@@ -492,7 +508,7 @@ function HomeClient() {
                         />
                       ))
                     : // 显示真实数据
-                      hotCustomCategory.map((show, index) => (
+                      limitForDevice(hotCustomCategory).map((show, index) => (
                         <div
                           key={index}
                           className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
