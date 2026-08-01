@@ -96,7 +96,7 @@ export async function GET(request: Request) {
 }
 
 function handleTop250(pageStart: number) {
-  const target = `https://movie.douban.com/top250?start=${pageStart}&filter=`;
+  const target = `https://movie.douban.cmliussss.net/top250?start=${pageStart}&filter=`;
 
   // 直接使用 fetch 获取 HTML 页面
   const controller = new AbortController();

@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
 
   if (!process.env.PASSWORD) {
-    // 如果没有设置密码，重定向到警告页面
+    // 如果没有设置密码，重定向到警告页�?
     const warningUrl = new URL('/warning', request.url);
     return NextResponse.redirect(warningUrl);
   }
@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
     return handleAuthFailure(request, pathname);
   }
 
-  // localstorage模式：在middleware中完成验证
+  // localstorage模式：在middleware中完成验�?
   if (storageType === 'localstorage') {
     if (!authInfo.password || authInfo.password !== process.env.PASSWORD) {
       return handleAuthFailure(request, pathname);
@@ -97,19 +97,19 @@ async function verifySignature(
   }
 }
 
-// 处理认证失败的情况
+// 处理认证失败的情�?
 function handleAuthFailure(
   request: NextRequest,
   pathname: string
 ): NextResponse {
-  // 如果是 API 路由，返回 401 状态码
+  // 如果�?API 路由，返�?401 状态码
   if (pathname.startsWith('/api')) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
   // 否则重定向到登录页面
   const loginUrl = new URL('/login', request.url);
-  // 保留完整的URL，包括查询参数
+  // 保留完整的URL，包括查询参�?
   const fullUrl = `${pathname}${request.nextUrl.search}`;
   loginUrl.searchParams.set('redirect', fullUrl);
   return NextResponse.redirect(loginUrl);
@@ -125,6 +125,7 @@ function shouldSkipAuth(pathname: string): boolean {
     '/icons/',
     '/logo.png',
     '/screenshot.png',
+    '/api/bangumi/calendar',
   ];
 
   return skipPaths.some((path) => pathname.startsWith(path));
@@ -133,6 +134,6 @@ function shouldSkipAuth(pathname: string): boolean {
 // 配置middleware匹配规则
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|login|warning|api/login|api/logout|api/cron|api/server-config|api/recommendations).*))'
+    '/((?!_next/static|_next/image|favicon.ico|login|warning|api/login|api/logout|api/cron|api/server-config|api/recommendations).*)'
   ],
 };
