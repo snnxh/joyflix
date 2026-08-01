@@ -14,7 +14,10 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { SearchResult } from '@/lib/types';
-import { processImageUrl } from '@/lib/utils';
+import {
+  getDoubanServerImageProxyUrl,
+  processImageUrl,
+} from '@/lib/utils';
 
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 
@@ -397,9 +400,7 @@ export default function VideoCard({
 
             if (!img.dataset.retried && canUseServerFallback) {
               img.dataset.retried = 'true';
-              img.src = `/api/image-proxy?url=${encodeURIComponent(
-                actualPoster
-              )}`;
+              img.src = getDoubanServerImageProxyUrl(actualPoster);
             }
           }}
         />

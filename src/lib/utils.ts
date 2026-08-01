@@ -29,6 +29,14 @@ function getDoubanImageProxyConfig(): {
 /**
  * 处理图片 URL，如果设置了图片代理则使用代理
  */
+export function getDoubanServerImageProxyUrl(originalUrl: string): string {
+  const normalizedUrl = originalUrl.replace(
+    /img\d+\.doubanio\.com/gi,
+    'img3.doubanio.com'
+  );
+  return `/api/image-proxy?url=${encodeURIComponent(normalizedUrl)}`;
+}
+
 export function processImageUrl(originalUrl: string): string {
   if (!originalUrl) return originalUrl;
 
@@ -40,7 +48,7 @@ export function processImageUrl(originalUrl: string): string {
   const { proxyType, proxyUrl } = getDoubanImageProxyConfig();
   switch (proxyType) {
     case 'server':
-      return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+      return getDoubanServerImageProxyUrl(originalUrl);
     case 'img3':
       return originalUrl.replace(/img\d+\.doubanio\.com/g, 'img3.doubanio.com');
     case 'cmliussss-cdn-tencent':

@@ -2,6 +2,47 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
+const REQUEST_TIMEOUT_MS = 4500;
+const DOUBAN_IMAGE_HOST_PATTERN = /^img\d+\.doubanio\.com$/i;
+const DOUBAN_IMAGE_HOSTS = ['img3.doubanio.com', 'img9.doubanio.com'];
+
+function getImageCandidates(imageUrl: string): string[] {
+  const parsedUrl = new URL(imageUrl);
+
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('Unsupported image URL protocol');
+  }
+
+  if (!DOUBAN_IMAGE_HOST_PATTERN.test(parsedUrl.hostname)) {
+    return [parsedUrl.toString()];
+  }
+
+  return DOUBAN_IMAGE_HOSTS.map((hostname) => {
+    const candidate = new URL(parsedUrl);
+    candidate.hostname = hostname;
+    return candidate.toString();
+  });
+}
+
+async function fetchImage(imageUrl: string): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(imageUrl, {
+      headers: {
+        Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        Referer: 'https://movie.douban.com/',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // OrionTV 兼容接口
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,52 +52,64 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing image URL' }, { status: 400 });
   }
 
+  let candidates: string[];
   try {
-    const imageResponse = await fetch(imageUrl, {
-      headers: {
-        Referer: 'https://movie.douban.com/',
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      },
-    });
-
-    if (!imageResponse.ok) {
-      return NextResponse.json(
-        { error: imageResponse.statusText },
-        { status: imageResponse.status }
-      );
-    }
-
-    const contentType = imageResponse.headers.get('content-type');
-
-    if (!imageResponse.body) {
-      return NextResponse.json(
-        { error: 'Image response has no body' },
-        { status: 500 }
-      );
-    }
-
-    // 创建响应头
-    const headers = new Headers();
-    if (contentType) {
-      headers.set('Content-Type', contentType);
-    }
-
-    // 设置缓存头（可选）
-    headers.set('Cache-Control', 'public, max-age=15720000, s-maxage=15720000'); // 缓存半年
-    headers.set('CDN-Cache-Control', 'public, s-maxage=15720000');
-    headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=15720000');
-    headers.set('Netlify-Vary', 'query');
-
-    // 直接返回图片流
-    return new Response(imageResponse.body, {
-      status: 200,
-      headers,
-    });
+    candidates = getImageCandidates(imageUrl);
   } catch (error) {
     return NextResponse.json(
-      { error: 'Error fetching image' },
-      { status: 500 }
+      { error: (error as Error).message },
+      { status: 400 }
     );
   }
+
+  let lastError = 'Image upstream request failed';
+  let timedOut = false;
+
+  for (const candidate of candidates) {
+    try {
+      const imageResponse = await fetchImage(candidate);
+
+      if (!imageResponse.ok) {
+        lastError = `Image upstream returned ${imageResponse.status}`;
+        continue;
+      }
+
+      if (!imageResponse.body) {
+        lastError = 'Image upstream response has no body';
+        continue;
+      }
+
+      const headers = new Headers();
+      headers.set(
+        'Content-Type',
+        imageResponse.headers.get('content-type') || 'application/octet-stream'
+      );
+      headers.set(
+        'Cache-Control',
+        'public, max-age=15720000, s-maxage=15720000'
+      );
+      headers.set('CDN-Cache-Control', 'public, s-maxage=15720000');
+      headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=15720000');
+      headers.set('Netlify-Vary', 'query');
+      headers.set('X-Image-Proxy-Upstream', new URL(candidate).hostname);
+
+      return new Response(imageResponse.body, {
+        status: 200,
+        headers,
+      });
+    } catch (error) {
+      const requestError = error as Error;
+      if (requestError.name === 'AbortError') {
+        timedOut = true;
+        lastError = `Image upstream timed out after ${REQUEST_TIMEOUT_MS}ms`;
+      } else {
+        lastError = requestError.message || lastError;
+      }
+    }
+  }
+
+  return NextResponse.json(
+    { error: lastError },
+    { status: timedOut ? 504 : 502 }
+  );
 }
