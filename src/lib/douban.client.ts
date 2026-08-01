@@ -95,7 +95,7 @@ function getDoubanProxyConfig(): {
     | 'cors-proxy-zwei'
     | 'cmliussss-cdn-tencent'
     | 'cmliussss-cdn-ali'
-    
+
     | 'custom';
   proxyUrl: string;
 } {
@@ -148,6 +148,7 @@ export async function fetchDoubanCategories(
     : `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`;
 
   try {
+
     const response = await fetchWithTimeout(
       target,
       useTencentCDN || useAliCDN ? '' : proxyUrl
@@ -201,7 +202,7 @@ export async function getDoubanCategories(
       return fetchDoubanCategories(params, '', true, false);
     case 'cmliussss-cdn-ali':
       return fetchDoubanCategories(params, '', false, true);
-    
+
     case 'custom':
       return fetchDoubanCategories(params, proxyUrl);
     case 'direct':
@@ -233,7 +234,7 @@ export async function getDoubanList(
       return fetchDoubanList(params, '', true, false);
     case 'cmliussss-cdn-ali':
       return fetchDoubanList(params, '', false, true);
-    
+
     case 'custom':
       return fetchDoubanList(params, proxyUrl);
     case 'direct':
@@ -352,7 +353,7 @@ export async function getDoubanRecommends(
       return fetchDoubanRecommends(params, '', true, false);
     case 'cmliussss-cdn-ali':
       return fetchDoubanRecommends(params, '', false, true);
-    
+
     case 'custom':
       return fetchDoubanRecommends(params, proxyUrl);
     case 'direct':
